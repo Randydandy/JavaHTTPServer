@@ -10,6 +10,8 @@ import IO.Configuration;
 
 public class Server 
 {
+	public static String VERSION = "HTTP/1.1";
+	
 	private ServerSocket m_Socket;
 	private Listener m_Listener;
 	private boolean m_Running;
@@ -59,8 +61,9 @@ public class Server
 					Client c = new Client(s, Server.this);
 					c.Start();
 					m_aClients.add(c);
+					Thread.sleep(10);
 				} 
-				catch (IOException e) 
+				catch (Exception e) 
 				{
 					e.printStackTrace();
 				}

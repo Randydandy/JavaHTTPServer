@@ -6,7 +6,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.InputMismatchException;
+
+import main.Parser;
 
 public class Configuration 
 {
@@ -92,20 +93,8 @@ public class Configuration
 			m_RootDirectory = val;
 		else if(key.equalsIgnoreCase("bindport"))
 		{
-			int i = ParseInt(val);
+			int i = Parser.ParseInt(val);
 			if(i > 0) m_BindPort = i;
-		}
-	}
-	
-	private static int ParseInt(String s)
-	{
-		try
-		{
-			int i = Integer.parseInt(s);
-			return i;
-		} catch(NumberFormatException | InputMismatchException ex)
-		{
-			return -1;
 		}
 	}
 }
