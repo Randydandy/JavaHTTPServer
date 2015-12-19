@@ -11,6 +11,7 @@ import IO.Configuration;
 public class Server 
 {
 	public static String VERSION = "HTTP/1.1";
+	public static String SERVER_AGENT = "MyFirstJava/1.0.0 by TeamTrouble";
 	
 	private ServerSocket m_Socket;
 	private Listener m_Listener;
@@ -23,6 +24,11 @@ public class Server
 		m_Running = false;
 		m_aClients = new ArrayList<Client>();
 		m_Config = new Configuration();
+	}
+	
+	public Configuration Config()
+	{
+		return m_Config;
 	}
 	
 	public void Start()

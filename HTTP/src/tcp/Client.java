@@ -2,12 +2,14 @@ package tcp;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 
 import http.Request;
+import http.Request.RequestType;
 import http.Response;
 import http.Response.StatusCode;
 
@@ -60,7 +62,45 @@ public class Client
 		} 
 		catch (IOException e)
 		{
-			e.printStackTrace();
+		}
+	}
+	
+	public void SendError(StatusCode sc)
+	{
+		Response re = new Response(sc);
+		re.m_Connection = "Closed";
+		re.m_Agent = Server.SERVER_AGENT;
+		re.m_ContentType = "text/html";
+		re.SetData(m_Server.Config().GetErrorDocument(re.m_StatusCodeNum));
+		Send(re.toString());
+	}
+	
+	private void SendDocument(Request r) 
+	{
+		String file = r.m_Request;
+		String request = m_Server.Config().m_RootDirectory + file;
+		System.out.println("Request: " + request);
+		File f = new File(request);
+		Response re = new Response(StatusCode.OK);
+		re.m_Connection = "Closed";
+		re.m_Agent = Server.SERVER_AGENT;
+		re.m_ContentType = "text/html";
+		
+		if(f.isDirectory())
+		{
+			// File List or index.html
+		}
+		else
+		{
+			String data = m_Server.Config().GetFileContents(request);
+			if(!f.exists())
+				SendError(StatusCode.NOT_FOUND);
+			else if(data == null)
+				SendError(StatusCode.BAD_REQUEST);
+			else
+			{
+				// Send File
+			}				
 		}
 	}
 	
@@ -85,34 +125,19 @@ public class Client
 						Request r = Request.ParseRequest(s);
 						
 						if(r == null)
-						{
-							Response re = new Response(StatusCode.BAD_REQUEST);
-							re.m_Connection = "Closed";
-							re.m_Agent = "Server: MyFirstJava/1.0.0";
-							re.m_ContentType = "text/html";
-							re.SetData("<html><body>Bad Request</body></html>");
-							Send(re.toString());
-						}
+							SendError(StatusCode.BAD_REQUEST);
 						else if(!r.m_Version.equalsIgnoreCase(Server.VERSION))
-						{
-							Response re = new Response(StatusCode.HTTP_VERSION_NOT_SUPPORTED);
-							re.m_Connection = "Closed";
-							re.m_Agent = "Server: MyFirstJava/1.0.0";
-							re.m_ContentType = "text/html";
-							re.SetData("<html><body>Your version is not supported.</body></html>");
-							Send(re.toString());
-						}
+							SendError(StatusCode.HTTP_VERSION_NOT_SUPPORTED);
 						else
 						{
-							System.out.println(r.m_RequestTypeStr + " " + r.m_Host + r.m_Request + " " + r.m_Agent);
-							
-							Response re = new Response(StatusCode.INTERNAL_SERVER_ERROR);
-							re.m_Connection = "Closed";
-							re.m_Agent = "Server: MyFirstJava/1.0.0";
-							re.m_ContentType = "text/html";
-							re.SetData("<html><body>500 Internal Server Error<br>NOT FINISHED HERE<br>Java HTTP Server<br>Java suckz</body></html>");
-							Send(re.toString());
+							System.out.println(r.m_RequestTypeStr + " " + r.m_Host + r.m_Request + " " + r.m_Agent + " " + m_Socket.getRemoteSocketAddress().toString());
+							if(r.m_RequestType == RequestType.GET)
+								SendDocument(r);
+							else						
+								SendError(StatusCode.INTERNAL_SERVER_ERROR);
 						}
+						
+						strbuilder = new StringBuilder();
 					}
 					Thread.sleep(10);
 				}
