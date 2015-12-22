@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 
 import http.Request;
 import http.Request.RequestType;
@@ -88,7 +90,51 @@ public class Client
 		
 		if(f.isDirectory())
 		{
-			// File List or index.html
+			String data = "<html></body>";
+			data += "<h1>Index of " + file + "</h1>";
+			data += "<table><tbody>";
+			data += "<tr><th valign=\"top\"><img src=\"/icons/blank.gif\" alt=\"[ICO]\"></th><th><a href=\"?C=N;O=D\">Name</a></th><th><a href=\"?C=M;O=A\">Last modified</a></th><th><a href=\"?C=S;O=A\">Size</a></th><th><a href=\"?C=D;O=A\">Description</a></th></tr>";
+			data += "<tr><th colspan=\"5\"><hr></th></tr>";
+			
+			if(!(new File(m_Server.Config().m_RootDirectory)).equals(f))
+			{
+				String url = file;
+				if(!url.endsWith("\\") && !url.endsWith("/")) url += "/";
+				url += "..";
+				data += "<tr><td valign=\"top\"><img src=\"/icons/back.gif\" alt=\"[PARENTDIR]\"></td><td><a href=\"" + url + "\">Parent Directory</a>       </td><td>&nbsp;</td><td align=\"right\">  - </td><td>&nbsp;</td></tr>";	
+			}
+						
+			List<File> aDirs = new ArrayList<File>();
+			List<File> aFiles = new ArrayList<File>();
+			
+			for (File a : f.listFiles()) 
+			{
+				if (a.isDirectory()) aDirs.add(a);
+				else aFiles.add(a);
+			}
+			
+			for(File a : aDirs)
+			{
+				String url = file;
+				if(!url.endsWith("\\") && !url.endsWith("/")) url += "/";
+				url += a.getName();
+				data += "<tr><td valign=\"top\"><img src=\"/icons/folder.gif\" alt=\"[DIR]\"></td><td><a href=\"" + url + "\">" + a.getName() + "</a>                  </td><td align=\"right\"></td><td align=\"right\">  - </td><td>&nbsp;</td></tr>";
+			}
+			
+			for(File a : aFiles)
+			{
+				String url = file;
+				if(!url.endsWith("\\") && !url.endsWith("/")) url += "/";
+				url += a.getName();
+				data += "<tr><td valign=\"top\"><img src=\"/icons/binary.gif\" alt=\"[   ]\"></td><td><a href=\"" + url + "\">" + a.getName() + "</a>             </td><td align=\"right\"></td><td align=\"right\"></td><td>&nbsp;</td></tr>";
+			}
+			
+			data += "<tr><th colspan=\"5\"><hr></th></tr>";
+			data += "</tbody></table>";
+			data += "<address>" + Server.SERVER_AGENT + "</address>";
+			data += "</body></html>";
+			re.SetData(data);
+			Send(re.toString());
 		}
 		else
 		{
@@ -96,11 +142,13 @@ public class Client
 			if(!f.exists())
 				SendError(StatusCode.NOT_FOUND);
 			else if(data == null)
-				SendError(StatusCode.BAD_REQUEST);
+				SendError(StatusCode.INTERNAL_SERVER_ERROR);
 			else
 			{
-				// Send File
-			}				
+				re.m_ContentDisposition = "attachment; filename=\"" + f.getName() + "\"";
+				re.SetData(m_Server.Config().GetFileContents(request));
+				Send(re.toString());
+			}
 		}
 	}
 	
